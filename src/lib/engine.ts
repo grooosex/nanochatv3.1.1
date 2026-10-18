@@ -3,14 +3,14 @@ import { chatContextBlock, fieldPolishHint, groupFormatHint, IMAGE_BG_RULES, IMA
 import { buildPolishUserContent, extractFieldText, parsePolishJson, stripRoleOutput } from "./role-polish";
 import { formatUserForChat, formatUserImageTurn, standingDirectives } from "./user-markup";
 import { stripSpeakerPrefix } from "./rp-text";
-import { replyContextText } from "./reply-markup.ts";
+import { replyContextText, replyStoryText } from "./reply-markup.ts";
 import { resolveImageWrite, imageWriteFields } from "./image-ai.ts";
 import { buildIdlecloudBody, buildNaiPayload } from "./nai";
 import { sanitizeNaiTags, assignCharTags, extractJsonObject, resolveAbsentIds, presenceFromTags, legacyPresentIds } from "./nai-tags";
 import { IMAGE_DRAW_TIMEOUT_MS, IMAGE_GEN_TIMEOUT_MS, NAI_HOP_TIMEOUT_MS, NAI_POLL_MS, RECENT_TURNS } from "./constants";
 import { getImage } from "./idb";
 import { saveBlob, useApp } from "./store";
-import { presetStyle } from "./st-preset";
+import { imagePresetStyle, presetStyle } from "./st-preset";
 import type { Chat, ChatMessage, GenImage, GrokModelId } from "./types";
 import { randomSeed, uid } from "./utils";
 import { imageFailText } from "./image-status";
@@ -338,10 +338,11 @@ export async function writeImageTags(
     messages: [{ role: "user", content: imageBrief(chat, { shot: shotText, residual: lastText, prevScene, turnUser }) }],
     max_tokens: imageWriteMaxTokens(chat.imageParams.model),
     ...imageWriteFields(imageModelId),
+    ...imagePresetStyle(useApp.getState().settings, chat),
   };
   if (!dest.split) payload.grokModelId = grokModelId;
   const text = await grokOnce(payload, withImageTimeout(signal));
-  return parseImageTagOutput(text, chat);
+  return parseImageTagOutput(replyStoryText(text), chat);
 }
 
 export { genPhaseLabel, imageFailText, prettyImageError, settleStuckImages } from "./image-status";

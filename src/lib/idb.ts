@@ -29,6 +29,7 @@ export const defaultSettings = (): Settings => ({
   stPresets: [],
   stActiveId: null,
   stParamSnapshot: null,
+  stImageActiveId: null,
   naiKey: "",
   naiBase: DEFAULT_NAI_BASE,
   naiConnected: false,
@@ -104,6 +105,10 @@ export async function loadAll() {
   const stPresets = parseStPresets(raw?.stPresets);
   const stActiveId =
     typeof raw?.stActiveId === "string" && stPresets.some((p) => p.id === raw.stActiveId) ? raw.stActiveId : null;
+  const stImageActiveId =
+    typeof raw?.stImageActiveId === "string" && stPresets.some((p) => p.id === raw.stImageActiveId)
+      ? raw.stImageActiveId
+      : null;
   const settings = {
     ...defaultSettings(),
     ...(raw ?? {}),
@@ -115,6 +120,7 @@ export async function loadAll() {
     stPresets,
     stActiveId,
     stParamSnapshot: stActiveId && raw?.stParamSnapshot ? mergeLlmParams(raw.stParamSnapshot) : null,
+    stImageActiveId,
     chatSource: raw?.chatSource === "api" && raw?.llmConnected ? ("api" as const) : ("grok" as const),
     chatImage: raw?.chatImage !== false,
     imageModelId: typeof raw?.imageModelId === "string" ? raw.imageModelId : null,

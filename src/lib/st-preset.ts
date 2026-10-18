@@ -215,6 +215,33 @@ export function activePreset(settings: Settings): StPreset | null {
   return (settings.stPresets ?? []).find((p) => p.id === id) ?? null;
 }
 
+export function activeImagePreset(settings: {
+  stImageActiveId?: string | null;
+  stPresets?: StPreset[];
+}): StPreset | null {
+  const id = settings.stImageActiveId;
+  if (!id) return null;
+  return (settings.stPresets ?? []).find((p) => p.id === id) ?? null;
+}
+
+/** 只给单独写提示词。没选预设时返回空，调用处和以前一样。 */
+export function imagePresetStyle(
+  settings: { stImageActiveId?: string | null; stPresets?: StPreset[] },
+  chat?: Chat | null,
+): { styleExtra?: string; postHistory?: string } {
+  const preset = activeImagePreset(settings);
+  if (!preset) return {};
+  const ctx = macroContext(chat);
+  const sys = substituteMacros(preset.systemPrompt, ctx).trim();
+  const post = substituteMacros(preset.postHistory, ctx).trim();
+  const closer =
+    "上面的预设只影响怎么理解这一镜。最终输出仍只能是生图标签或规定的 JSON。思考过程不要写进标签。";
+  return {
+    styleExtra: sys || undefined,
+    postHistory: [post, closer].filter(Boolean).join("\n\n"),
+  };
+}
+
 export function samplerPatch(params: StPreset["params"], current: LlmParams): LlmParams {
   return {
     ...current,

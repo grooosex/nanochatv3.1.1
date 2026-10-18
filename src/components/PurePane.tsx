@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type PointerEvent as PE, type ReactNode } from "react";
 import { Bookmark, Check, ChevronLeft, Clock, Download, Eye, Folder, MoreHorizontal, Pencil, ScanSearch, SlidersHorizontal, Star, X } from "lucide-react";
 import { parseNaiPng } from "@/lib/png-meta";
+import { IMAGE_PICK_ACCEPT, isImageFile } from "@/lib/ref-image";
 import { buildNaiPayload, modelLabel, modelShort, samplerLabel, samplerShort } from "@/lib/nai";
 import { COOLDOWN_MS, NAI_MODELS, NOISE_SCHEDULES } from "@/lib/constants";
 import { imageUrl } from "@/lib/idb";
@@ -1351,12 +1352,16 @@ function ReadMeta() {
       看图识参
       <input
         type="file"
-        accept="image/png,image/jpeg,.png,.jpg,.jpeg"
+        accept={IMAGE_PICK_ACCEPT}
         className="hidden"
         onChange={async (e) => {
           const file = e.target.files?.[0];
           e.target.value = "";
           if (!file) return;
+          if (!isImageFile(file)) {
+            useApp.getState().toast("请选择图片");
+            return;
+          }
           try {
             const meta = parseNaiPng(await file.arrayBuffer());
             if (!meta.prompt) {

@@ -489,7 +489,8 @@ function ApiSettingsSheet({ onClose }: { onClose: () => void }) {
         {pruneStarred(settings.llmStarred, settings.llmModels, settings.llmModel).length}
       </p>
 
-      <ChatPresetPicker />
+      <ChatPresetPicker mode="chat" />
+      <ChatPresetPicker mode="image" />
 
       <div className="mt-5 mb-2 flex items-center justify-between">
         <div className="text-[14px] font-medium">预设</div>
@@ -582,6 +583,11 @@ function applyStPreset(preset: StPreset) {
   useApp.getState().toast(`已应用预设（${preset.name}）`);
 }
 
+function applyImagePreset(preset: StPreset) {
+  useApp.getState().setSettings({ stImageActiveId: preset.id });
+  useApp.getState().toast(`已应用生图预设（${preset.name}）`);
+}
+
 function cancelStPreset() {
   const s = useApp.getState().settings;
   useApp.getState().setSettings({
@@ -592,10 +598,36 @@ function cancelStPreset() {
   useApp.getState().toast("已取消预设");
 }
 
-function ChatPresetPicker() {
+function cancelImagePreset() {
+  useApp.getState().setSettings({ stImageActiveId: null });
+  useApp.getState().toast("已取消生图预设");
+}
+
+function deleteStPreset(id: string) {
+  const s = useApp.getState().settings;
+  const next = (s.stPresets ?? []).filter((x) => x.id !== id);
+  const chatWas = s.stActiveId === id;
+  const imageWas = s.stImageActiveId === id;
+  useApp.getState().setSettings({
+    stPresets: next,
+    ...(chatWas
+      ? {
+          stActiveId: null,
+          stParamSnapshot: null,
+          llmParams: restoreSampler(s.stParamSnapshot, s.llmParams),
+        }
+      : {}),
+    ...(imageWas ? { stImageActiveId: null } : {}),
+  });
+  if (chatWas) useApp.getState().toast("已取消预设");
+  else if (imageWas) useApp.getState().toast("已取消生图预设");
+}
+
+function ChatPresetPicker({ mode }: { mode: "chat" | "image" }) {
   const settings = useApp((s) => s.settings);
   const presets = settings.stPresets ?? [];
-  const active = activePreset(settings);
+  const activeId = mode === "chat" ? settings.stActiveId : settings.stImageActiveId;
+  const active = presets.find((p) => p.id === activeId) ?? null;
   const fileRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState<{ top: number; left: number; width: number; maxH: number } | null>(null);
@@ -680,33 +712,43 @@ function ChatPresetPicker() {
   return (
     <div className="mt-5">
       <div className="mb-2 flex items-center gap-2">
-        <div className="min-w-0 flex-1 text-[14px] font-medium">对话补全预设</div>
-        <input
-          ref={fileRef}
-          type="file"
-          accept=".json,application/json"
-          className="hidden"
-          onChange={(e) => {
-            const f = e.target.files?.[0];
-            e.target.value = "";
-            if (f) void importFile(f);
-          }}
-        />
-        <button
-          type="button"
-          className="grid size-8 shrink-0 place-items-center text-muted"
-          aria-label="导入预设"
-          onClick={() => fileRef.current?.click()}
-        >
-          <FileUp className="size-4" />
-        </button>
+        <div className="min-w-0 flex-1 text-[14px] font-medium">
+          {mode === "chat" ? "对话补全预设" : "生图提示词预设"}
+        </div>
+        {mode === "chat" ? (
+          <>
+            <input
+              ref={fileRef}
+              type="file"
+              accept=".json,application/json"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                e.target.value = "";
+                if (f) void importFile(f);
+              }}
+            />
+            <button
+              type="button"
+              className="grid size-8 shrink-0 place-items-center text-muted"
+              aria-label="导入预设"
+              onClick={() => fileRef.current?.click()}
+            >
+              <FileUp className="size-4" />
+            </button>
+          </>
+        ) : null}
         {active ? (
           <span className="flex shrink-0 items-center gap-2 text-[12px]">
             <span className="inline-flex items-center gap-1 text-good">
               <Check className="size-3.5" />
               已应用
             </span>
-            <button type="button" className="text-muted" onClick={cancelStPreset}>
+            <button
+              type="button"
+              className="text-muted"
+              onClick={mode === "chat" ? cancelStPreset : cancelImagePreset}
+            >
               取消
             </button>
           </span>
@@ -756,7 +798,8 @@ function ChatPresetPicker() {
                           p.id === active?.id && "text-primary",
                         )}
                         onClick={() => {
-                          applyStPreset(p);
+                          if (mode === "chat") applyStPreset(p);
+                          else applyImagePreset(p);
                           setOpen(false);
                         }}
                       >
@@ -766,22 +809,7 @@ function ChatPresetPicker() {
                         type="button"
                         className="grid size-10 shrink-0 place-items-center text-danger"
                         aria-label={`删除${p.name}`}
-                        onClick={() => {
-                          const s = useApp.getState().settings;
-                          const was = s.stActiveId === p.id;
-                          const next = (s.stPresets ?? []).filter((x) => x.id !== p.id);
-                          if (was) {
-                            useApp.getState().setSettings({
-                              stPresets: next,
-                              stActiveId: null,
-                              stParamSnapshot: null,
-                              llmParams: restoreSampler(s.stParamSnapshot, s.llmParams),
-                            });
-                            useApp.getState().toast("已取消预设");
-                          } else {
-                            useApp.getState().setSettings({ stPresets: next });
-                          }
-                        }}
+                        onClick={() => deleteStPreset(p.id)}
                       >
                         <Trash2 className="size-4" />
                       </button>

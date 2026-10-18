@@ -45,6 +45,7 @@ export async function exportArchive(kind: "full" | "lite") {
       stPresets: [],
       stActiveId: null,
       stParamSnapshot: null,
+      stImageActiveId: null,
       naiKey: "",
       naiBase: "https://api.idlecloud.cc",
       naiConnected: false,
@@ -163,6 +164,7 @@ export async function importArchive(file: File) {
       stPresets: Array.isArray(dumpS?.stPresets) ? dumpS.stPresets : (prevVal?.stPresets ?? []),
       stActiveId: dumpS?.stActiveId ?? prevVal?.stActiveId ?? null,
       stParamSnapshot: dumpS?.stParamSnapshot ?? prevVal?.stParamSnapshot ?? null,
+      stImageActiveId: dumpS?.stImageActiveId ?? prevVal?.stImageActiveId ?? null,
     };
     await db.kv.put({ key: "settings", value: merged });
     if (currentId !== undefined) await db.kv.put({ key: "currentId", value: currentId });

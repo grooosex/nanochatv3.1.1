@@ -58,6 +58,15 @@ async function callXai(opts: {
   return { ok: true as const, res };
 }
 
+function completionText(
+  task: string,
+  msg?: { content?: string; reasoning_content?: string; reasoning?: string },
+) {
+  const content = (msg?.content || "").trim();
+  if (task === "image") return content;
+  return (content || msg?.reasoning_content || msg?.reasoning || "").trim();
+}
+
 export const Route = createFileRoute("/api/grok")({
   server: {
     handlers: {
@@ -174,7 +183,7 @@ export const Route = createFileRoute("/api/grok")({
           choices?: { message?: { content?: string; reasoning_content?: string; reasoning?: string } }[];
         };
         const msg = json.choices?.[0]?.message;
-        let text = (msg?.content || msg?.reasoning_content || msg?.reasoning || "").trim();
+        let text = completionText(task, msg);
         text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
         return Response.json({ ok: true, text });
       },

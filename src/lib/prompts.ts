@@ -349,7 +349,10 @@ export function systemFor(task: string, extra?: string, styleExtra?: string, ima
     const img = imageSystem?.trim();
     return img ? `${withStyle}\n\n${img}` : withStyle;
   }
-  if (task === "image") return extra ? `${IMAGE_SYSTEM}\n\n${extra}` : IMAGE_SYSTEM;
+  if (task === "image") {
+    const core = extra ? `${IMAGE_SYSTEM}\n\n${extra}` : IMAGE_SYSTEM;
+    return style ? `${core}\n\n${style}` : core;
+  }
   if (task === "polish") {
     const core = extra ? `${POLISH_SYSTEM}\n\n${extra}` : POLISH_SYSTEM;
     return style ? `${core}\n\n${style}` : core;

@@ -29,6 +29,15 @@ function normalizeBase(raw: string) {
   }
 }
 
+function completionText(
+  task: string,
+  msg?: { content?: string; reasoning_content?: string; reasoning?: string },
+) {
+  const content = (msg?.content || "").trim();
+  if (task === "image") return content;
+  return (content || msg?.reasoning_content || msg?.reasoning || "").trim();
+}
+
 function openaiError(status: number, text: string) {
   try {
     const j = JSON.parse(text) as { error?: { message?: string } | string; message?: string };
@@ -189,7 +198,7 @@ export const Route = createFileRoute("/api/llm")({
             choices?: { message?: { content?: string; reasoning_content?: string; reasoning?: string } }[];
           };
           const msg = json.choices?.[0]?.message;
-          let text = (msg?.content || msg?.reasoning_content || msg?.reasoning || "").trim();
+          let text = completionText(task, msg);
           text = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
           return Response.json({ ok: true, text });
         } catch (e) {

@@ -1,6 +1,6 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-import { parseChatCompletionPreset, substituteMacros, uniquePresetName } from "./st-preset.ts";
+import { parseChatCompletionPreset, substituteMacros, uniquePresetName, imagePresetStyle } from "./st-preset.ts";
 import { systemFor, RP_SYSTEM, POLISH_SYSTEM, FIELD_SYSTEM } from "./prompts.ts";
 
 const sample = {
@@ -109,6 +109,32 @@ describe("systemFor cancel is identical", () => {
     assert.match(systemFor("personalize", "改成病娇"), /【个性化要求·最高优先】/);
     assert.equal(systemFor("personalize", "改成病娇", ""), systemFor("personalize", "改成病娇"));
     assert.equal(systemFor("memory", "x", "style"), systemFor("memory"));
-    assert.equal(systemFor("image", "x", "style"), systemFor("image", "x"));
+    assert.equal(systemFor("image", "x", "  "), systemFor("image", "x"));
+    assert.equal(systemFor("image", "x", "风格"), `${systemFor("image", "x")}\n\n风格`);
+  });
+});
+
+describe("imagePresetStyle", () => {
+  const preset = {
+    id: "p1",
+    name: "小猫",
+    systemPrompt: "演 {{char}}",
+    postHistory: "记住 {{user}}",
+    params: {},
+  };
+
+  it("is empty when no image preset is selected", () => {
+    assert.deepEqual(imagePresetStyle({ stImageActiveId: null, stPresets: [preset] }), {});
+    assert.deepEqual(imagePresetStyle({ stImageActiveId: "missing", stPresets: [preset] }), {});
+  });
+
+  it("uses the image preset, not the chat one, and keeps a tag closer", () => {
+    const style = imagePresetStyle(
+      { stImageActiveId: "p1", stPresets: [preset] },
+      { characters: [{ name: "七实", persona: "" }], isMulti: false, opening: "" } as never,
+    );
+    assert.equal(style.styleExtra, "演 七实");
+    assert.match(style.postHistory || "", /^记住 你\n\n/);
+    assert.match(style.postHistory || "", /不要写进标签/);
   });
 });

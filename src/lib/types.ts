@@ -301,6 +301,8 @@ export interface Settings {
   stPresets: StPreset[];
   stActiveId: string | null;
   stParamSnapshot: LlmParams | null;
+  /** 单独写生图提示词时用的预设。不改温度。未选则和以前一样。 */
+  stImageActiveId: string | null;
   naiKey: string;
   naiBase: string;
   naiConnected: boolean;

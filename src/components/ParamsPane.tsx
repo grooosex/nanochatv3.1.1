@@ -10,7 +10,7 @@ import {
 } from "@/lib/constants";
 import { applyBackFlags, applyFrontFlags, applyMergedFlags } from "@/lib/prompt-flags";
 import { listedChats, saveBlob, useApp } from "@/lib/store";
-import { compressRef, naiSeedOf } from "@/lib/ref-image";
+import { compressRef, IMAGE_PICK_ACCEPT, isImageFile, naiSeedOf } from "@/lib/ref-image";
 import { imageUrl } from "@/lib/idb";
 import { insertTag, loadTags, suggestTags, type Tag } from "@/lib/tags";
 import { naiFamily } from "@/lib/nai";
@@ -927,7 +927,12 @@ function Img2ImgBox({
     };
   }, [blobId]);
   const take = (file?: File) => {
-    if (file && (!file.type || file.type.startsWith("image/"))) onFile(file);
+    if (!file) return;
+    if (!isImageFile(file)) {
+      useApp.getState().toast("请选择图片");
+      return;
+    }
+    onFile(file);
   };
   return (
     <div className="mb-4" data-section="img2img">
@@ -980,7 +985,7 @@ function Img2ImgBox({
       <input
         ref={input}
         type="file"
-        accept="image/*"
+        accept={IMAGE_PICK_ACCEPT}
         className="hidden"
         onChange={(e) => {
           take(e.target.files?.[0]);

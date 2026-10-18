@@ -51,6 +51,7 @@ function baseSettings(): Settings {
     stPresets: [],
     stActiveId: null,
     stParamSnapshot: null,
+    stImageActiveId: null,
     naiKey: "",
     naiBase: DEFAULT_NAI_BASE,
     naiConnected: false,

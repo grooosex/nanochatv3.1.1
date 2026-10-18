@@ -5,7 +5,7 @@ import { polishAll, polishField, foldWindow } from "@/lib/engine";
 import { FIELD_LABELS } from "@/lib/prompts";
 import { applyRoleField, mergePolish } from "@/lib/role-polish";
 import { useApp, saveBlob } from "@/lib/store";
-import { compressRef } from "@/lib/ref-image";
+import { compressRef, IMAGE_PICK_ACCEPT, isImageFile } from "@/lib/ref-image";
 import { imageUrl } from "@/lib/idb";
 import { syncCharsFromRole } from "@/lib/nai";
 import type { Chat, ExtraField } from "@/lib/types";
@@ -758,12 +758,17 @@ function LookRef({
       <input
         ref={input}
         type="file"
-        accept="image/*"
+        accept={IMAGE_PICK_ACCEPT}
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
-          if (file) onPick(file);
           e.target.value = "";
+          if (!file) return;
+          if (!isImageFile(file)) {
+            useApp.getState().toast("请选择图片");
+            return;
+          }
+          onPick(file);
         }}
       />
     </div>

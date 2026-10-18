@@ -15,7 +15,7 @@ import {
   X,
 } from "lucide-react";
 import { imageUrl } from "@/lib/idb";
-import { compressRef } from "@/lib/ref-image";
+import { compressRef, IMAGE_PICK_ACCEPT, isImageFile } from "@/lib/ref-image";
 import { modelLabel, samplerLabel } from "@/lib/nai";
 import { extractGrokTail } from "@/lib/nai-tags";
 import { saveBlob, useApp } from "@/lib/store";
@@ -322,12 +322,16 @@ export function ChatPane({ chat }: { chat: Chat }) {
           <input
             ref={fileRef}
             type="file"
-            accept="image/*"
+            accept={IMAGE_PICK_ACCEPT}
             className="hidden"
             onChange={(e) => {
               const file = e.target.files?.[0];
               e.target.value = "";
               if (!file) return;
+              if (!isImageFile(file)) {
+                useApp.getState().toast("请选择图片");
+                return;
+              }
               void compressRef(file, 1024, 0.85).then(async (blob) => {
                 const id = await saveBlob(blob);
                 useApp.getState().setComposerShot(chat.id, { blobId: id, i2i: false });
