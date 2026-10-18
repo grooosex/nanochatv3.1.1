@@ -15,9 +15,10 @@ import {
   X,
 } from "lucide-react";
 import { imageUrl } from "@/lib/idb";
-import { compressRef, IMAGE_PICK_ACCEPT, isImageFile } from "@/lib/ref-image";
+import { compressRef } from "@/lib/ref-image";
 import { modelLabel, samplerLabel } from "@/lib/nai";
 import { extractGrokTail } from "@/lib/nai-tags";
+import { ImagePick } from "./ImagePick";
 import { saveBlob, useApp } from "@/lib/store";
 import { downloadBlob, cn } from "@/lib/utils";
 import { foldWindow, genPhaseLabel, stripStatus } from "@/lib/engine";
@@ -40,7 +41,6 @@ export function ChatPane({ chat }: { chat: Chat }) {
   const [atBottom, setAtBottom] = useState(true);
   const draft = useApp((s) => s.composerDrafts[chat.id] ?? "");
   const shot = useApp((s) => s.composerShots[chat.id]);
-  const fileRef = useRef<HTMLInputElement>(null);
   const [shotUrl, setShotUrl] = useState<string | null>(null);
 
   useEffect(() => {
@@ -311,32 +311,23 @@ export function ChatPane({ chat }: { chat: Chat }) {
             placeholder=""
             className="max-h-32 min-h-[46px] flex-1 resize-none rounded-full border border-line bg-card px-4 py-3 text-[14px] outline-none"
           />
-          <button
-            type="button"
-            className="grid size-11 shrink-0 place-items-center rounded-full border border-line text-ink"
-            aria-label="添加图片"
-            onClick={() => fileRef.current?.click()}
-          >
-            <Plus className="size-5" />
-          </button>
-          <input
-            ref={fileRef}
-            type="file"
-            accept={IMAGE_PICK_ACCEPT}
-            className="hidden"
-            onChange={(e) => {
-              const file = e.target.files?.[0];
-              e.target.value = "";
-              if (!file) return;
-              if (!isImageFile(file)) {
-                useApp.getState().toast("请选择图片");
-                return;
-              }
+          <ImagePick
+            onFile={(file) => {
               void compressRef(file, 1024, 0.85).then(async (blob) => {
                 const id = await saveBlob(blob);
                 useApp.getState().setComposerShot(chat.id, { blobId: id, i2i: false });
               });
             }}
+            render={(open) => (
+              <button
+                type="button"
+                className="grid size-11 shrink-0 place-items-center rounded-full border border-line text-ink"
+                aria-label="添加图片"
+                onClick={open}
+              >
+                <Plus className="size-5" />
+              </button>
+            )}
           />
           <button
             onClick={send}

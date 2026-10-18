@@ -10,7 +10,7 @@ import {
 } from "@/lib/constants";
 import { applyBackFlags, applyFrontFlags, applyMergedFlags } from "@/lib/prompt-flags";
 import { listedChats, saveBlob, useApp } from "@/lib/store";
-import { compressRef, IMAGE_PICK_ACCEPT, isImageFile, naiSeedOf } from "@/lib/ref-image";
+import { compressRef, isImageFile, naiSeedOf } from "@/lib/ref-image";
 import { imageUrl } from "@/lib/idb";
 import { insertTag, loadTags, suggestTags, type Tag } from "@/lib/tags";
 import { naiFamily } from "@/lib/nai";
@@ -25,6 +25,7 @@ import type { AppearancePreset, Chat, CharacterPrompt, ImageParams, NaiModelId, 
 import { cn, randomSeed, uid } from "@/lib/utils";
 import { LibraryDrawer } from "./LibraryDrawer";
 import { Card, ChatAvatar, ExpandSelect, Slider, Switch, TextArea, ZoomImg } from "./ui-kit";
+import { ImagePick } from "./ImagePick";
 
 function scrollJump(jump: string) {
   const el = document.querySelector(`[data-section="${jump}"]`) as HTMLElement | null;
@@ -910,7 +911,6 @@ function Img2ImgBox({
   onStrength: (n: number) => void;
   onNoise: (n: number) => void;
 }) {
-  const input = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState<string | null>(null);
   const [over, setOver] = useState(false);
   useEffect(() => {
@@ -963,35 +963,30 @@ function Img2ImgBox({
           <Slider value={noise} min={0} max={0.99} step={0.01} onChange={onNoise} />
         </>
       ) : (
-        <button
-          type="button"
-          className={`flex h-36 w-full flex-col items-center justify-center gap-2 rounded-[16px] border border-dashed text-[13px] text-muted ${over ? "border-primary bg-dim" : "border-line"}`}
-          onClick={() => input.current?.click()}
-          onDragOver={(e) => {
-            e.preventDefault();
-            setOver(true);
-          }}
-          onDragLeave={() => setOver(false)}
-          onDrop={(e) => {
-            e.preventDefault();
-            setOver(false);
-            take(e.dataTransfer.files?.[0]);
-          }}
-        >
-          <Upload className="size-5" />
-          点击或将图像拖放到此处
-        </button>
+        <ImagePick
+          onFile={onFile}
+          render={(open) => (
+            <button
+              type="button"
+              className={`flex h-36 w-full flex-col items-center justify-center gap-2 rounded-[16px] border border-dashed text-[13px] text-muted ${over ? "border-primary bg-dim" : "border-line"}`}
+              onClick={open}
+              onDragOver={(e) => {
+                e.preventDefault();
+                setOver(true);
+              }}
+              onDragLeave={() => setOver(false)}
+              onDrop={(e) => {
+                e.preventDefault();
+                setOver(false);
+                take(e.dataTransfer.files?.[0]);
+              }}
+            >
+              <Upload className="size-5" />
+              点击或将图像拖放到此处
+            </button>
+          )}
+        />
       )}
-      <input
-        ref={input}
-        type="file"
-        accept={IMAGE_PICK_ACCEPT}
-        className="hidden"
-        onChange={(e) => {
-          take(e.target.files?.[0]);
-          e.target.value = "";
-        }}
-      />
     </div>
   );
 }

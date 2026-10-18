@@ -1,9 +1,6 @@
 import { parseNaiPng } from "./png-meta";
 import { getImage } from "./idb";
 
-/** 多带一个非图片类型，Android 才会先问「相册 / 文件」，而不是直接进照片选择器。 */
-export const IMAGE_PICK_ACCEPT = "image/*,application/octet-stream";
-
 const IMAGE_EXT = /\.(png|jpe?g|gif|webp|bmp|heic|heif|avif)$/i;
 
 export function isImageFile(file: File): boolean {

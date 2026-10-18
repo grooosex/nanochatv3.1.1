@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState, type PointerEvent as PE, type ReactNode } from "react";
 import { Bookmark, Check, ChevronLeft, Clock, Download, Eye, Folder, MoreHorizontal, Pencil, ScanSearch, SlidersHorizontal, Star, X } from "lucide-react";
 import { parseNaiPng } from "@/lib/png-meta";
-import { IMAGE_PICK_ACCEPT, isImageFile } from "@/lib/ref-image";
 import { buildNaiPayload, modelLabel, modelShort, samplerLabel, samplerShort } from "@/lib/nai";
 import { COOLDOWN_MS, NAI_MODELS, NOISE_SCHEDULES } from "@/lib/constants";
 import { imageUrl } from "@/lib/idb";
@@ -11,6 +10,7 @@ import type { FavoriteItem, FavGroup, HistoryItem, ImageParams } from "@/lib/typ
 import { afterPaint, generateNai, genPhaseLabel, imageFailText } from "@/lib/engine";
 import { autoScrollNearEdge, downloadBlob, indexFromY, moveId, nearestScroller, randomSeed, sortHistoryNewestFirst, uid } from "@/lib/utils";
 import { ParamsPane } from "./ParamsPane";
+import { ImagePick } from "./ImagePick";
 import { IconBtn, PrimaryBtn, TextArea, TextInput, useCooldown } from "./ui-kit";
 
 const HOLD_MS = 400;
@@ -1347,63 +1347,59 @@ function PureParamsSheet({ onClose }: { onClose: () => void }) {
 
 function ReadMeta() {
   return (
-    <label className="mb-3 flex h-11 cursor-pointer items-center justify-center gap-2 rounded-full border border-line bg-card text-[13px]">
-      <ScanSearch className="size-4" />
-      看图识参
-      <input
-        type="file"
-        accept={IMAGE_PICK_ACCEPT}
-        className="hidden"
-        onChange={async (e) => {
-          const file = e.target.files?.[0];
-          e.target.value = "";
-          if (!file) return;
-          if (!isImageFile(file)) {
-            useApp.getState().toast("请选择图片");
+    <ImagePick
+      onFile={async (file) => {
+        try {
+          const meta = parseNaiPng(await file.arrayBuffer());
+          if (!meta.prompt) {
+            useApp.getState().toast("没读到 NovelAI 参数");
             return;
           }
-          try {
-            const meta = parseNaiPng(await file.arrayBuffer());
-            if (!meta.prompt) {
-              useApp.getState().toast("没读到 NovelAI 参数");
-              return;
-            }
-            const p = useApp.getState().pureParams;
-            const known = NAI_MODELS.some((m) => m.id === meta.model || m.wire === meta.model);
-            const chars = meta.characters?.length
-              ? meta.characters.map((c, i) => ({
-                  id: p.characters[i]?.id || `c${i}`,
-                  name: p.characters[i]?.name || `角色${i + 1}`,
-                  enabled: true,
-                  prompt: c.prompt,
-                  uc: c.uc,
-                  x: c.x,
-                  y: c.y,
-                }))
-              : p.characters;
-            useApp.getState().setPureParams({
-              merged: true,
-              promptMid: meta.prompt,
-              promptFront: "",
-              promptBack: "",
-              negative: meta.uc || p.negative,
-              width: meta.width || p.width,
-              height: meta.height || p.height,
-              steps: meta.steps || p.steps,
-              scale: meta.scale || p.scale,
-              seed: meta.seed ?? p.seed,
-              sampler: (meta.sampler as ImageParams["sampler"]) || p.sampler,
-              noiseSchedule: (meta.noiseSchedule as ImageParams["noiseSchedule"]) || p.noiseSchedule,
-              model: known ? ((NAI_MODELS.find((m) => m.id === meta.model || m.wire === meta.model)?.id ?? p.model) as ImageParams["model"]) : p.model,
-              characters: chars,
-            });
-            useApp.getState().toast("已识别参数");
-          } catch {
-            useApp.getState().toast("识别失败，不是带参数的 NAI PNG");
-          }
-        }}
-      />
-    </label>
+          const p = useApp.getState().pureParams;
+          const known = NAI_MODELS.some((m) => m.id === meta.model || m.wire === meta.model);
+          const chars = meta.characters?.length
+            ? meta.characters.map((c, i) => ({
+                id: p.characters[i]?.id || `c${i}`,
+                name: p.characters[i]?.name || `角色${i + 1}`,
+                enabled: true,
+                prompt: c.prompt,
+                uc: c.uc,
+                x: c.x,
+                y: c.y,
+              }))
+            : p.characters;
+          useApp.getState().setPureParams({
+            merged: true,
+            promptMid: meta.prompt,
+            promptFront: "",
+            promptBack: "",
+            negative: meta.uc || p.negative,
+            width: meta.width || p.width,
+            height: meta.height || p.height,
+            steps: meta.steps || p.steps,
+            scale: meta.scale || p.scale,
+            seed: meta.seed ?? p.seed,
+            sampler: (meta.sampler as ImageParams["sampler"]) || p.sampler,
+            noiseSchedule: (meta.noiseSchedule as ImageParams["noiseSchedule"]) || p.noiseSchedule,
+            model: known ? ((NAI_MODELS.find((m) => m.id === meta.model || m.wire === meta.model)?.id ?? p.model) as ImageParams["model"]) : p.model,
+            characters: chars,
+          });
+          useApp.getState().toast("已识别参数");
+        } catch {
+          useApp.getState().toast("识别失败，不是带参数的 NAI PNG");
+        }
+      }}
+      render={(open) => (
+        <button
+          type="button"
+          className="mb-3 flex h-11 w-full items-center justify-center gap-2 rounded-full border border-line bg-card text-[13px]"
+          onClick={open}
+        >
+          <ScanSearch className="size-4" />
+          看图识参
+        </button>
+      )}
+    />
   );
 }
 

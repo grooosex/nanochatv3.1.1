@@ -5,7 +5,7 @@ import { polishAll, polishField, foldWindow } from "@/lib/engine";
 import { FIELD_LABELS } from "@/lib/prompts";
 import { applyRoleField, mergePolish } from "@/lib/role-polish";
 import { useApp, saveBlob } from "@/lib/store";
-import { compressRef, IMAGE_PICK_ACCEPT, isImageFile } from "@/lib/ref-image";
+import { compressRef } from "@/lib/ref-image";
 import { imageUrl } from "@/lib/idb";
 import { syncCharsFromRole } from "@/lib/nai";
 import type { Chat, ExtraField } from "@/lib/types";
@@ -15,6 +15,7 @@ import { invalidateMemory, runManualMemory } from "./chat-actions";
 import { ChatModelSelect } from "./ModelSelect";
 import { Card, ExpandSelect, FieldLabel, GhostBtn, Modal, PrimaryBtn, Switch, TextArea, TextInput, ZoomImg } from "./ui-kit";
 import { LibraryDrawer } from "./LibraryDrawer";
+import { ImagePick } from "./ImagePick";
 
 type Busy =
   | null
@@ -715,7 +716,6 @@ function LookRef({
   onPick: (file: File) => void;
   onClear: () => void;
 }) {
-  const input = useRef<HTMLInputElement>(null);
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     if (!blobId) {
@@ -745,32 +745,21 @@ function LookRef({
           </button>
         </div>
       ) : (
-        <button
-          type="button"
-          className="grid size-9 place-items-center rounded-full border border-line text-muted"
-          aria-label="上传外貌备忘"
-          onClick={() => input.current?.click()}
-        >
-          <Plus className="size-4" />
-        </button>
+        <ImagePick
+          onFile={onPick}
+          render={(open) => (
+            <button
+              type="button"
+              className="grid size-9 place-items-center rounded-full border border-line text-muted"
+              aria-label="上传外貌备忘"
+              onClick={open}
+            >
+              <Plus className="size-4" />
+            </button>
+          )}
+        />
       )}
       <span className="text-[12px] text-muted">外貌备忘的样子，只给聊天看</span>
-      <input
-        ref={input}
-        type="file"
-        accept={IMAGE_PICK_ACCEPT}
-        className="hidden"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          e.target.value = "";
-          if (!file) return;
-          if (!isImageFile(file)) {
-            useApp.getState().toast("请选择图片");
-            return;
-          }
-          onPick(file);
-        }}
-      />
     </div>
   );
 }
